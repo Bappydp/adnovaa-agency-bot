@@ -18,7 +18,6 @@ bot to clients.
 AGENCY_NAME = "Facebook | Google Ads Agencies"
 WHATSAPP_NUMBER = "+1 (623) 329-7869"
 TELEGRAM_CONTACT = "@Adnovaa_agency"
-PORTFOLIO_URL = "https://manikchowdhury.netlify.app"
 GROUP_URL = "https://t.me/Facebook_google_adnovaa"
 WEBSITE_URL = "https://adnovaa.com"
 INSTAGRAM_HANDLE = "@manikadsexpert"
@@ -158,17 +157,8 @@ def render_packages() -> str:
 
 
 # ------------------------------------------------------------------
-# Portfolio / contact / payment
+# Contact / payment
 # ------------------------------------------------------------------
-
-PORTFOLIO = (
-    "🌐 <b>Portfolio</b>\n\n"
-    f"• Website: {PORTFOLIO_URL}\n"
-    f"• Marketplace: {WEBSITE_URL}\n"
-    "• Facebook page (21K followers): Advertising Agencies\n"
-    f"• Instagram: {INSTAGRAM_HANDLE}\n\n"
-    "Message us and we will show you results relevant to your niche."
-)
 
 CONTACT = (
     "💬 <b>Contact</b>\n\n"
@@ -296,8 +286,6 @@ GROUP_KEYWORD_DEFAULTS = [
     ("contact",
      f"💬 You can reach us on WhatsApp {WHATSAPP_NUMBER} or Telegram "
      f"{TELEGRAM_CONTACT} — or DM this bot and tap Contact."),
-    ("portfolio",
-     f"🌐 See our work here: {PORTFOLIO_URL} — or DM this bot and tap Portfolio."),
     ("discount",
      "🎟️ Discounts and coupons are announced in our channel — join it so "
      "you don't miss the next one! DM this bot and tap Redeem Coupon if "

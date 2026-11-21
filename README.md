@@ -4,7 +4,7 @@ Ei bot-ta tomar agency-r Telegram promotion, lead capture ar group management �
 
 ## Bot-ta ki ki kore (16-ta feature)
 
-1. **Welcome + button menu** — `/start` dile Services, Portfolio, Pricing, Contact button ashe
+1. **Welcome + button menu** — `/start` dile Services, Pricing, Contact button ashe
 2. **Service details + package/price** — 3-ta package: Starter / Growth / Premium (price ekhono example — `content.py`-te TODO lekha ache, asol price bosate hobe)
 3. **FAQ auto-reply** — `/faq` + DM-e proshno likhle keyword miliye uttor dei
 4. **Broadcast** — `/broadcast <message>` dile bot start kora sob user-ke message jai

@@ -20,12 +20,11 @@ def main_menu(is_vip: bool = False, subscribed: bool = True) -> InlineKeyboardMa
     rows += [
         [_btn("🚀 Services", "menu_services"),
          _btn("💰 Pricing", "menu_pricing")],
-        [_btn("🌐 Portfolio", "menu_portfolio"),
-         _btn("💬 Contact", "menu_contact")],
-        [_btn("💳 Payment Info", "menu_payment"),
-         _btn("❓ FAQ", "menu_faq")],
-        [_btn("🎁 Giveaway", "menu_giveaway"),
-         _btn("🎟️ Redeem Coupon", "menu_redeem")],
+        [_btn("💬 Contact", "menu_contact"),
+         _btn("💳 Payment Info", "menu_payment")],
+        [_btn("❓ FAQ", "menu_faq"),
+         _btn("🎁 Giveaway", "menu_giveaway")],
+        [_btn("🎟️ Redeem Coupon", "menu_redeem")],
     ]
     if is_vip:
         rows.append([_btn("👑 VIP Offers", "menu_vip")])

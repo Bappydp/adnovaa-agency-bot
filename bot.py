@@ -1,7 +1,7 @@
 """Agency Telegram Bot — Facebook | Google Ads Agencies.
 
 Features (all 16):
-  1. /start welcome + button menu (Services, Portfolio, Pricing, Contact)
+  1. /start welcome + button menu (Services, Pricing, Contact)
   2. Service details + 3 packages (prices are TODO placeholders in content.py)
   3. FAQ auto-reply (/faq + keyword matching in DMs)
   4. /broadcast to all users (admin only)
