@@ -73,6 +73,20 @@ def channel_join_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([buttons])
 
 
+def welcome_keyboard() -> InlineKeyboardMarkup:
+    """Fixed buttons under EVERY post-join group welcome — the
+    custom text welcome, the custom photo welcome, and the default
+    welcome all carry these. They are NOT editable: only the
+    welcome text/photo is set via /setwelcome."""
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("💬 Chat with Owner",
+                              url="https://t.me/Adnovaa_agency")],
+        [InlineKeyboardButton("🌐 Website", url="https://adnovaa.com"),
+         InlineKeyboardButton("⭐ Our Reviews",
+                              url="https://t.me/reviewadnovaa")],
+    ])
+
+
 def report_keyboard(report_id: int,
                     with_actions: bool = True) -> InlineKeyboardMarkup:
     """Admin buttons on a /report message. DM reports (no reported

@@ -8,7 +8,7 @@ Ei bot-ta tomar agency-r Telegram promotion, lead capture ar group management �
 2. **Service details + package/price** — 3-ta package: Starter / Growth / Premium (price ekhono example — `content.py`-te TODO lekha ache, asol price bosate hobe)
 3. **FAQ auto-reply** — `/faq` + DM-e proshno likhle keyword miliye uttor dei
 4. **Broadcast** — `/broadcast <message>` dile bot start kora sob user-ke message jai
-5. **Force-subscribe** — group-e likhte hole age channel join korte hobe; join na korle message delete hoye jai + Join button ashe
+5. **Force-subscribe** — group-e likhte hole age channel join korte hobe; join na korle message delete hoye jai + Join button ashe. Channel join korar porer message-tai sathe sathe jabe — **✅ I've Joined tap korte hoi na** (tap korle sudhu welcome message-ta ashe)
 6. **Admin stats** — `/stats`: total user, ajker/ei week-er notun user, kon button-e koto click, top command, lead, VIP count
 7. **Payment info** — payment method dekhai (wallet address ekhono placeholder — `PASTE_YOUR_WALLET_HERE`, asol address bosate hobe)
 8. **Coupon system** — `/addcoupon CODE PERCENT EXPIRY`, user `/redeem CODE` diye use kore (jon proti 1 bar, expiry check hoi)
@@ -138,7 +138,7 @@ User-ra use kore: `/start`, `/faq`, `/redeem CODE`, `/giveawayinfo`, `/report`, 
 
 ## Welcome message bodlano (/setwelcome)
 
-Keu channel join kore group-e **✅ I've Joined** tap korle je welcome message-ta group-e ashe, seta tumi nije set korte paro — bot-ke DM-e pathiye:
+Keu channel join korle tar porer group message sathe sathe jabe — kono tap korte hoi na. Ar group-e **✅ I've Joined** tap korle je welcome message-ta ashe, seta tumi nije set korte paro — bot-ke DM-e pathiye:
 
 1. Bot-ke DM-e `/setwelcome` pathao (group-e na, bot-er sathe private chat-e)
 2. Tarpor **ekta message** pathao — duto vabe:
@@ -149,6 +149,8 @@ Keu channel join kore group-e **✅ I've Joined** tap korle je welcome message-t
 5. Majhkhane bondho korte chaile `/cancel` pathao — kichu bodlabe na
 
 Save korar sathe sathe bot tomake **preview** dekhabe — joiner-ra thik etai dekhbe.
+
+Prottek welcome-er niche ei 3-ta button **automatic** thakbe (text, chobi ba default — sob khetrei): **💬 Chat with Owner** (@Adnovaa_agency), **🌐 Website** (adnovaa.com), **⭐ Our Reviews** (t.me/reviewadnovaa). Button-gulo bodlano jai na — sudhu welcome-er lekha/chobi tumi set korte paro.
 
 - `/welcome` — ekhon je welcome set ache setar preview dekha (custom na thakle default message dekhabe)
 - `/resetwelcome` — custom welcome muche fela, default message-e fera
