@@ -5,6 +5,10 @@ non-member's message — including commands — is deleted before any
 other handler can act on it.
 
 Order inside this handler:
+  0. Exemption: posts from OUR channel (forwarded into the group
+     by a user, or sent by the channel itself) are left alone —
+     no gate, no anti-spam, no keyword auto-reply. Forwards from
+     any OTHER channel are treated like normal messages.
   1. Force-subscribe gate (non-members deleted)
   2. Anti-spam (obvious spam deleted, strikes recorded, 3 strikes = ban)
   3. Keyword auto-reply (only for messages that survived 1 and 2)
@@ -37,6 +41,7 @@ from handlers.common import (
     is_admin,
     is_channel_member,
     is_group_admin,
+    is_our_channel,
     notify_admins,
 )
 
@@ -230,6 +235,19 @@ async def handle_group_message(update: Update,
     # Skip service messages (joins, leaves, pins, ...).
     if (msg.new_chat_members or msg.left_chat_member
             or msg.pinned_message or msg.group_chat_created):
+        return
+
+    # --- Our channel is exempt --------------------------------------
+    # A post from OUR channel that is forwarded into the group (or
+    # sent by the channel itself) must be left alone: no gate, no
+    # anti-spam, no keyword auto-reply. The forwarder may not have
+    # joined the channel and the post itself may carry several
+    # links — neither may get it deleted. Forwards from any OTHER
+    # channel fall through to the gate and anti-spam below.
+    # (getattr: forward_from_chat / sender_chat may be absent on
+    # old message objects; is_our_channel(None) is safely False.)
+    if is_our_channel(getattr(msg, "forward_from_chat", None)) or \
+            is_our_channel(getattr(msg, "sender_chat", None)):
         return
 
     user = msg.from_user
