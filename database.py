@@ -144,6 +144,13 @@ CREATE TABLE IF NOT EXISTS welcome_settings (
     photo_file_id TEXT,
     updated_at    TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS content_settings (
+    section       TEXT PRIMARY KEY,
+    text          TEXT,
+    photo_file_id TEXT,
+    updated_at    TEXT NOT NULL
+);
 """
 
 
@@ -840,5 +847,56 @@ def reset_welcome() -> bool:
     with _lock:
         conn = _connect()
         cur = conn.execute("DELETE FROM welcome_settings WHERE id = 1")
+        conn.commit()
+        return cur.rowcount > 0
+
+
+# ------------------------------------------------------------------
+# Custom menu content (set by the admin with /setservices,
+# /setpricing, /setcontact, /setpayment)
+# ------------------------------------------------------------------
+# Same single-row-per-key mechanism as the custom welcome, keyed by
+# section instead of the fixed id=1.
+
+CONTENT_SECTIONS = ("services", "pricing", "contact", "payment")
+
+
+def _check_section(section: str) -> None:
+    if section not in CONTENT_SECTIONS:
+        raise ValueError(f"unknown content section: {section!r}")
+
+
+def get_content_section(section: str) -> dict | None:
+    """The custom content for a menu section, or None if not set."""
+    _check_section(section)
+    with _lock:
+        row = _connect().execute(
+            "SELECT * FROM content_settings WHERE section = ?",
+            (section,)).fetchone()
+    return dict(row) if row else None
+
+
+def set_content_section(section: str, text: str | None,
+                        photo_file_id: str | None) -> None:
+    """Save (or replace) the custom content for a menu section."""
+    _check_section(section)
+    with _lock:
+        conn = _connect()
+        conn.execute(
+            "INSERT OR REPLACE INTO content_settings "
+            "(section, text, photo_file_id, updated_at) VALUES (?, ?, ?, ?)",
+            (section, text, photo_file_id, _now_iso()))
+        conn.commit()
+
+
+def reset_content_section(section: str) -> bool:
+    """Delete the custom content for a section.
+    Returns True if one existed."""
+    _check_section(section)
+    with _lock:
+        conn = _connect()
+        cur = conn.execute(
+            "DELETE FROM content_settings WHERE section = ?",
+            (section,))
         conn.commit()
         return cur.rowcount > 0
