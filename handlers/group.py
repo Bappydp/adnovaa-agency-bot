@@ -8,8 +8,13 @@ Order inside this handler:
   1. Force-subscribe gate (non-members deleted)
   2. Anti-spam (obvious spam deleted, strikes recorded, 3 strikes = ban)
   3. Keyword auto-reply (only for messages that survived 1 and 2)
+
+The gate warning is EPHEMERAL: it is posted in the group (never
+DM — the owner doesn't want private warnings) and deletes itself
+after 30 seconds, and each user gets at most one warning per hour.
 """
 
+import asyncio
 import html
 import logging
 import re
@@ -37,10 +42,63 @@ from handlers.common import (
 
 logger = logging.getLogger(__name__)
 
-# user_id -> timestamp of the last gate warning (1 hour cooldown,
-# so repeat offenders don't get a new warning every message).
+# user_id -> timestamp of the last gate warning (5 minute cooldown,
+# so repeat offenders don't get a new warning every message — but
+# since the warning deletes itself after 30s, a user who missed it
+# gets reminded on their next message after 5 minutes).
 _warn_cooldown: dict[int, float] = {}
-_WARN_TTL = 3600
+_WARN_TTL = 300
+
+# Seconds before an in-group gate warning deletes itself.
+_WARN_DELETE_AFTER = 30
+
+
+async def _delete_gate_warning(context: ContextTypes.DEFAULT_TYPE) -> None:
+    """JobQueue callback: delete an expired gate warning. The
+    message may already be gone (the user tapped "✅ I've Joined"
+    first, or an admin deleted it) — that is fine, never crash."""
+    job = context.job
+    try:
+        await context.bot.delete_message(job.chat_id, job.data)
+    except Exception as exc:
+        logger.debug("Gate warning %s already gone: %s", job.data, exc)
+
+
+async def _delete_gate_warning_soon(context, chat_id: int,
+                                    message_id: int) -> None:
+    """asyncio fallback when no JobQueue is available: wait, then
+    delete. Same tolerance for an already-gone message."""
+    await asyncio.sleep(_WARN_DELETE_AFTER)
+    try:
+        await context.bot.delete_message(chat_id, message_id)
+    except Exception as exc:
+        logger.debug("Gate warning %s already gone: %s", message_id, exc)
+
+
+def _schedule_warning_delete(context: ContextTypes.DEFAULT_TYPE,
+                             chat_id: int, message_id: int) -> None:
+    """Delete a gate warning ~30s after it is posted, so the group
+    never fills up with stale warnings. JobQueue first (the pattern
+    the bot already uses for delayed work); an asyncio task if no
+    JobQueue is available."""
+    job_queue = getattr(context, "job_queue", None)
+    if job_queue is not None:
+        try:
+            job_queue.run_once(
+                _delete_gate_warning, when=_WARN_DELETE_AFTER,
+                data=message_id, chat_id=chat_id,
+                name=f"gate_warning:{chat_id}:{message_id}")
+            return
+        except Exception as exc:
+            logger.warning("Could not schedule gate-warning delete: %s",
+                           exc)
+    try:
+        asyncio.create_task(
+            _delete_gate_warning_soon(context, chat_id, message_id))
+    except RuntimeError as exc:
+        # No running loop (shouldn't happen inside a handler).
+        logger.warning("Could not schedule gate-warning delete: %s",
+                       exc)
 
 # user_id -> timestamp of the last keyword auto-reply (60s cooldown).
 _keyword_cooldown: dict[int, float] = {}
@@ -189,12 +247,15 @@ async def handle_group_message(update: Update,
             if now - _warn_cooldown.get(user.id, 0) > _WARN_TTL:
                 _warn_cooldown[user.id] = now
                 url = channel_url() or ""
-                await context.bot.send_message(
+                sent = await context.bot.send_message(
                     msg.chat_id,
                     GROUP_JOIN_WARNING.format(
                         name=html.escape(user.first_name or ""),
                         channel_url=url),
                     reply_markup=keyboards.channel_join_keyboard())
+                # Ephemeral: the warning deletes itself after 30s.
+                _schedule_warning_delete(context, msg.chat_id,
+                                         sent.message_id)
             # Stop here: no other handler should process this message.
             raise ApplicationHandlerStop
 
