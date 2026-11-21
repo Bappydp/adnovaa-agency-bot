@@ -1,6 +1,6 @@
 """Agency Telegram Bot — Facebook | Google Ads Agencies.
 
-Features (all 15):
+Features (all 16):
   1. /start welcome + button menu (Services, Portfolio, Pricing, Contact)
   2. Service details + 3 packages (prices are TODO placeholders in content.py)
   3. FAQ auto-reply (/faq + keyword matching in DMs)
@@ -18,6 +18,9 @@ Features (all 15):
  14. /report — members flag a message to the admins (delete/ban/dismiss)
  15. Admin alerts: mass-leave watch + bot removed/lost-admin alerts
      (/alerts)
+ 16. Welcome editor: the admin sets the post-join group welcome
+     himself, text or photo + caption (/setwelcome, /welcome,
+     /resetwelcome)
 
 Runs with long polling + a tiny Flask health endpoint on $PORT,
 so it fits Render's free web-service tier (kept awake by a
@@ -46,7 +49,7 @@ from telegram.ext import (
 import config
 import database as db
 from content import GROUP_KEYWORD_DEFAULTS, SPAM_WORD_DEFAULTS
-from handlers import admin, dm, giveaway, group, jobs, report, start_menu, watch
+from handlers import admin, dm, giveaway, group, jobs, report, start_menu, watch, welcome
 
 logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
@@ -104,6 +107,14 @@ def build_application() -> Application:
                        group.handle_group_message),
         group=-1)
 
+    # /setwelcome conversation FIRST in group 0: its callbacks raise
+    # ApplicationHandlerStop so the generic /cancel handler and the
+    # DM free-text handler (FAQ matching) never also fire on the
+    # admin's input — and that only works for handlers registered
+    # AFTER this one. Outside a conversation it matches nothing, so
+    # normal commands and DM text are unaffected.
+    app.add_handler(welcome.setwelcome_conversation())
+
     # User commands.
     app.add_handler(CommandHandler("start", start_menu.start))
     app.add_handler(CommandHandler("help", start_menu.help_command))
@@ -134,6 +145,9 @@ def build_application() -> Application:
                                    admin.delspamword_command))
     app.add_handler(CommandHandler("spamwords", admin.spamwords_command))
     app.add_handler(CommandHandler("alerts", admin.alerts_command))
+    app.add_handler(CommandHandler("welcome", welcome.welcome_command))
+    app.add_handler(CommandHandler("resetwelcome",
+                                   welcome.resetwelcome_command))
     app.add_handler(CommandHandler("giveaway",
                                    giveaway.create_giveaway_command))
     app.add_handler(CommandHandler("draw", giveaway.draw_command))

@@ -137,6 +137,13 @@ CREATE TABLE IF NOT EXISTS alert_state (
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS welcome_settings (
+    id            INTEGER PRIMARY KEY,
+    text          TEXT,
+    photo_file_id TEXT,
+    updated_at    TEXT NOT NULL
+);
 """
 
 
@@ -803,3 +810,35 @@ def mass_leave_alert_due(chat_id: int, threshold: int,
 
 def record_mass_leave_alert(chat_id: int) -> None:
     set_alert_value(f"mass_leave:{chat_id}", _now_iso())
+
+
+# ------------------------------------------------------------------
+# Custom group welcome (set by the admin with /setwelcome)
+# ------------------------------------------------------------------
+
+def get_welcome() -> dict | None:
+    """The custom welcome (single row, id=1), or None if not set."""
+    with _lock:
+        row = _connect().execute(
+            "SELECT * FROM welcome_settings WHERE id = 1").fetchone()
+    return dict(row) if row else None
+
+
+def set_welcome(text: str | None, photo_file_id: str | None) -> None:
+    """Save (or replace) the custom welcome message."""
+    with _lock:
+        conn = _connect()
+        conn.execute(
+            "INSERT OR REPLACE INTO welcome_settings "
+            "(id, text, photo_file_id, updated_at) VALUES (1, ?, ?, ?)",
+            (text, photo_file_id, _now_iso()))
+        conn.commit()
+
+
+def reset_welcome() -> bool:
+    """Delete the custom welcome. Returns True if one existed."""
+    with _lock:
+        conn = _connect()
+        cur = conn.execute("DELETE FROM welcome_settings WHERE id = 1")
+        conn.commit()
+        return cur.rowcount > 0

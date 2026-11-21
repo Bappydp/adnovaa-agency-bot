@@ -355,6 +355,13 @@ GROUP_JOIN_WARNING = (
     "Join, then tap <b>✅ I've Joined</b> below."
 )
 
+# Default post-join welcome in the group (after a member taps
+# "I've Joined"). The admin can replace it with /setwelcome —
+# the custom text supports the same {name} placeholder.
+GROUP_WELCOME_DEFAULT = (
+    "✅ {name}, you're in — welcome! You can write in the group now."
+)
+
 # ------------------------------------------------------------------
 # Group protection: anti-spam, /report, admin alerts
 # ------------------------------------------------------------------

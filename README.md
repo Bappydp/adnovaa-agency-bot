@@ -2,7 +2,7 @@
 
 Ei bot-ta tomar agency-r Telegram promotion, lead capture ar group management — sob ek jaigay.
 
-## Bot-ta ki ki kore (15-ta feature)
+## Bot-ta ki ki kore (16-ta feature)
 
 1. **Welcome + button menu** — `/start` dile Services, Portfolio, Pricing, Contact button ashe
 2. **Service details + package/price** — 3-ta package: Starter / Growth / Premium (price ekhono example — `content.py`-te TODO lekha ache, asol price bosate hobe)
@@ -19,6 +19,7 @@ Ei bot-ta tomar agency-r Telegram promotion, lead capture ar group management �
 13. **Group anti-spam** — obvious spam (crypto scam, casino, adult spam, 3+ link, notun member-er link+mention) auto delete hoi; 3-ta strike 24 ghontai = ban. `/spamstats`, `/addspamword`, `/delspamword`, `/spamwords`
 14. **/report** — member group-e kono message-e reply diye `/report` dile admin-der kache jai, sathe Delete / Ban / Dismiss button
 15. **Admin alert** — 1 ghontai 5+ jon leave korle alert; bot-ke group/channel theke sorale ba admin power kere nile sathe sathe alert. `/alerts` diye obostha dekha jai
+16. **Welcome editor** — `/setwelcome` diye group-er welcome message tumi nije set korte paro (text ba chobi + caption); `/welcome` diye preview, `/resetwelcome` diye default-e fera jai
 
 > ⚠️ **Ekta sotti kotha:** kono bot-i kauke channel report kora thekate pare na — report kora Telegram-er nijer system, ar report-er por ki hobe seta sudhu Telegram decide kore. Ei protection feature-gulo spam komiye report howar karon komai, kintu channel-ke "report-proof" banate pare na. Channel clean rakhlei sobcheye boro protection.
 
@@ -127,8 +128,32 @@ Bot-ke DM-e pathao (sudhu ADMIN_IDS-er user-ra use korte parbe):
 | `/delspamword word` | Spam word delete |
 | `/spamwords` | Spam word list |
 | `/alerts` | Group-er leave count, member count, alert obostha |
+| `/setwelcome` | Group welcome message set kora (text ba chobi + caption) |
+| `/welcome` | Choloman welcome message preview dekha |
+| `/resetwelcome` | Custom welcome muche default-e fera |
 
 User-ra use kore: `/start`, `/faq`, `/redeem CODE`, `/giveawayinfo`, `/report`, `/help`, `/cancel`
+
+---
+
+## Welcome message bodlano (/setwelcome)
+
+Keu channel join kore group-e **✅ I've Joined** tap korle je welcome message-ta group-e ashe, seta tumi nije set korte paro — bot-ke DM-e pathiye:
+
+1. Bot-ke DM-e `/setwelcome` pathao (group-e na, bot-er sathe private chat-e)
+2. Tarpor **ekta message** pathao — duto vabe:
+   - **Sudhu text** — jemon `🎉 Welcome {name}! ...` — tahole text-only welcome hobe
+   - **Chobi + caption** — chobi pathanor somoy caption-e lekha dio — tahole chobi soho welcome jabe (caption chara chobi cholbe na)
+3. Lekhar moddhe `{name}` likhle sekhane notun member-er nam bosbe
+4. Sorbochcho **1000 character** porjonto lekha jai; beshi hole bot janabe ar abar pathate bolbe
+5. Majhkhane bondho korte chaile `/cancel` pathao — kichu bodlabe na
+
+Save korar sathe sathe bot tomake **preview** dekhabe — joiner-ra thik etai dekhbe.
+
+- `/welcome` — ekhon je welcome set ache setar preview dekha (custom na thakle default message dekhabe)
+- `/resetwelcome` — custom welcome muche fela, default message-e fera
+
+> ⚠️ Welcome setting `bot.db`-te thake — Render-e redeploy korle muche jabe (Step 4-er note dekho). Tokhon `/setwelcome` diye abar set korte hobe. Ar chobi-r file majhe majhe purono hoye gele chobi na eshe sudhu text asbe — tokhon admin-der kache alert jabe, `/setwelcome` diye notun chobi set kore nio.
 
 ---
 
@@ -152,6 +177,7 @@ Sob lekha **ekta file-e**: `content.py`
 | Join na koreo group-e likhte pare | Bot channel-er admin kina check koro; `CHANNEL_ID` thik @username kina dekho |
 | Bot group-e kono message-e respond kore na | @BotFather-e `/setprivacy` → **Disable** kora hoyeche kina dekho |
 | `/stats` ba `/broadcast` kaj kore na | `ADMIN_IDS`-e tomar thik user ID boseche kina dekho (@userinfobot theke) |
+| Welcome-er chobi ashe na, sudhu text ashe | Chobi-r file purono hoye geche — `/setwelcome` diye notun chobi set koro; fail hole admin-der kache alert jai |
 | Bot majhe majhe reply dei na | UptimeRobot monitor chalu ache kina dekho (Step 6); Render log-e error ache kina dekho |
 | Deploy fail hoi | Render log dekho — sadharonoto `requirements.txt` install ba Python version-er somossa |
 
