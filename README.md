@@ -135,6 +135,8 @@ Bot-ke DM-e pathao (sudhu ADMIN_IDS-er user-ra use korte parbe):
 
 User-ra use kore: `/start`, `/faq`, `/redeem CODE`, `/giveawayinfo`, `/report`, `/help`, `/cancel`
 
+Telegram-e `/` likhle command suggestion ase — user-ra sudhu user command dekhe, admin-ra admin command-o dekhe (bot chalu howar somoy nije theke set hoye jai).
+
 ---
 
 ## Welcome message bodlano (/setwelcome)

@@ -29,6 +29,10 @@ Features (all 17):
 Runs with long polling + a tiny Flask health endpoint on $PORT,
 so it fits Render's free web-service tier (kept awake by a
 5-minute UptimeRobot ping, same as the MC ChatBot).
+
+Typing "/" in Telegram shows command suggestions: regular users
+see the user commands, and each admin additionally sees the admin
+commands (registered at startup in post_init, never fatal).
 """
 
 import logging
@@ -38,7 +42,12 @@ from datetime import time as dtime
 from datetime import timezone
 
 from flask import Flask
-from telegram import Update
+from telegram import (
+    BotCommand,
+    BotCommandScopeChat,
+    BotCommandScopeDefault,
+    Update,
+)
 from telegram.constants import ParseMode
 from telegram.ext import (
     Application,
@@ -85,6 +94,62 @@ def _run_flask() -> None:
 # Telegram app
 # ------------------------------------------------------------------
 
+# "/" command suggestions (Telegram "bot commands" menu).
+# Regular users see USER_COMMANDS only; each admin additionally
+# sees ADMIN_COMMANDS in their own chat with the bot
+# (BotCommandScopeChat). Registered at startup by post_init —
+# a failure only logs, the bot still starts and polls.
+# Telegram rules: names lowercase, 1-32 chars; descriptions
+# 1-256 chars. Keep these lists in sync with the handlers
+# registered in build_application() (incl. the /set...
+# conversation entry points in handlers/welcome.py and
+# handlers/content_editors.py).
+
+USER_COMMANDS = [
+    BotCommand("start", "Show the main menu"),
+    BotCommand("help", "How to use this bot"),
+    BotCommand("faq", "Frequently asked questions"),
+    BotCommand("redeem", "Redeem a discount coupon"),
+    BotCommand("giveawayinfo", "Current giveaway and your entries"),
+    BotCommand("report", "Report a message to the admins"),
+    BotCommand("cancel", "Cancel what you are doing"),
+]
+
+ADMIN_COMMANDS = [
+    BotCommand("adminhelp", "List all admin commands"),
+    BotCommand("broadcast", "Send a message to all users"),
+    BotCommand("stats", "Show bot statistics"),
+    BotCommand("addcoupon", "Create a discount coupon"),
+    BotCommand("coupons", "List all coupons"),
+    BotCommand("delcoupon", "Delete a coupon"),
+    BotCommand("vip", "Grant VIP membership to a user"),
+    BotCommand("unvip", "Remove VIP membership from a user"),
+    BotCommand("vipinfo", "Show a user's VIP status"),
+    BotCommand("addkeyword", "Add a group keyword auto-reply"),
+    BotCommand("delkeyword", "Remove a group keyword auto-reply"),
+    BotCommand("keywords", "List group keyword auto-replies"),
+    BotCommand("spamstats", "Show anti-spam statistics"),
+    BotCommand("addspamword", "Add a word to the spam list"),
+    BotCommand("delspamword", "Remove a word from the spam list"),
+    BotCommand("spamwords", "List the spam words"),
+    BotCommand("alerts", "Show recent admin alerts"),
+    BotCommand("welcome", "Preview the group welcome message"),
+    BotCommand("resetwelcome", "Reset the welcome to the default"),
+    BotCommand("setwelcome", "Set the group welcome message"),
+    BotCommand("giveaway", "Create a giveaway"),
+    BotCommand("draw", "Draw the giveaway winner"),
+    BotCommand("endgiveaway", "End the current giveaway"),
+    BotCommand("setservices", "Set the Services details"),
+    BotCommand("setpricing", "Set the Pricing details"),
+    BotCommand("setcontact", "Set the Contact details"),
+    BotCommand("setpayment", "Set the Payment Info details"),
+    BotCommand("resetservices", "Reset Services to the default"),
+    BotCommand("resetpricing", "Reset Pricing to the default"),
+    BotCommand("resetcontact", "Reset Contact to the default"),
+    BotCommand("resetpayment", "Reset Payment Info to the default"),
+]
+
+
 async def post_init(application: Application) -> None:
     """Runs once at startup: learn our own username, seed keywords."""
     me = await application.bot.get_me()
@@ -92,6 +157,30 @@ async def post_init(application: Application) -> None:
     db.seed_keywords(GROUP_KEYWORD_DEFAULTS)
     db.seed_spam_words(SPAM_WORD_DEFAULTS)
     logger.info("Bot started as @%s", me.username)
+    await _set_bot_commands(application)
+
+
+async def _set_bot_commands(application: Application) -> None:
+    """Register "/" command suggestions: user commands for
+    everyone (default scope), user + admin commands for each
+    admin (per-chat scope). Never raises — each call is guarded
+    separately, so one failure can't block the others or the
+    startup."""
+    try:
+        await application.bot.set_my_commands(
+            USER_COMMANDS, scope=BotCommandScopeDefault())
+    except Exception as exc:
+        logger.warning("Could not set default bot commands: %s", exc)
+    admin_commands = USER_COMMANDS + ADMIN_COMMANDS
+    for admin_id in config.ADMIN_IDS:
+        try:
+            await application.bot.set_my_commands(
+                admin_commands,
+                scope=BotCommandScopeChat(chat_id=admin_id))
+        except Exception as exc:
+            logger.warning(
+                "Could not set bot commands for admin %s: %s",
+                admin_id, exc)
 
 
 def build_application() -> Application:
