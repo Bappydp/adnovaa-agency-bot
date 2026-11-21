@@ -75,18 +75,9 @@ async def track_membership(update: Update,
     if user.id == context.bot.id:
         if new in _GONE_STATUSES and old not in _GONE_STATUSES:
             logger.warning("Bot was removed from %s", chat.id)
-            text = ALERT_BOT_REMOVED.format(chat=_chat_label(chat))
-            if db.delete_share_group(chat.id):
-                # It was a saved auto-share group — drop it from
-                # the list so future channel posts don't fail on
-                # it, and say so in the SAME alert (one alert
-                # total, not two).
-                text += (
-                    "\n\n📤 This group was also on your auto-share "
-                    "list — it has been removed from the list. Add "
-                    "it again with /addsharegroup after adding the "
-                    "bot back.")
-            await notify_admins(context, text)
+            await notify_admins(
+                context,
+                ALERT_BOT_REMOVED.format(chat=_chat_label(chat)))
         elif old == "administrator" and new == "member":
             logger.warning("Bot lost admin rights in %s", chat.id)
             await notify_admins(
