@@ -59,7 +59,14 @@ async def adminhelp_command(update: Update,
         "<b>Welcome message</b>\n"
         "• <code>/setwelcome</code> — set the group welcome (text or photo + caption)\n"
         "• <code>/welcome</code> — preview the current welcome\n"
-        "• <code>/resetwelcome</code> — back to the default welcome"
+        "• <code>/resetwelcome</code> — back to the default welcome\n\n"
+        "<b>Menu content</b>\n"
+        "• <code>/setservices</code> — set the Services details\n"
+        "• <code>/setpricing</code> — set the Pricing details\n"
+        "• <code>/setcontact</code> — set the Contact details\n"
+        "• <code>/setpayment</code> — set the Payment Info details\n"
+        "• <code>/resetservices</code> / <code>/resetpricing</code> / "
+        "<code>/resetcontact</code> / <code>/resetpayment</code> — back to defaults"
     )
 
 

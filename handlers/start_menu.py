@@ -22,7 +22,7 @@ from content import (
     render_packages,
     render_services,
 )
-from handlers import welcome
+from handlers import content_editors, welcome
 from handlers.common import (
     channel_url,
     get_bot_username,
@@ -126,20 +126,20 @@ async def on_callback(update: Update,
 
     if data == "menu_services":
         await mark_lead_and_notify(context, user)
-        await _safe_edit(query, render_services(),
-                         keyboards.back_menu())
+        await _show_section(query, context, "services",
+                            render_services())
 
     elif data == "menu_pricing":
         await mark_lead_and_notify(context, user)
-        await _safe_edit(query, render_packages(),
-                         keyboards.back_menu())
+        await _show_section(query, context, "pricing",
+                            render_packages())
 
     elif data == "menu_contact":
         await mark_lead_and_notify(context, user)
-        await _safe_edit(query, CONTACT, keyboards.back_menu())
+        await _show_section(query, context, "contact", CONTACT)
 
     elif data == "menu_payment":
-        await _safe_edit(query, PAYMENT_INFO, keyboards.back_menu())
+        await _show_section(query, context, "payment", PAYMENT_INFO)
 
     elif data == "menu_vip":
         await _safe_edit(query, VIP_OFFERS, keyboards.back_menu())
@@ -176,8 +176,20 @@ async def on_callback(update: Update,
     elif data == "menu_back":
         member = await is_channel_member(context.bot, user.id)
         subscribed = member is not False
-        await _safe_edit(query, WELCOME,
-                         _menu_for(user.id, subscribed))
+        if query.message is not None and query.message.photo:
+            # The current message is a photo (custom section
+            # content): it can't be edited back into the text menu,
+            # so delete it and send a fresh menu instead.
+            try:
+                await query.message.delete()
+            except Exception as exc:
+                logger.warning("Could not delete photo message: %s", exc)
+            await context.bot.send_message(
+                query.message.chat_id, WELCOME,
+                reply_markup=_menu_for(user.id, subscribed))
+        else:
+            await _safe_edit(query, WELCOME,
+                             _menu_for(user.id, subscribed))
 
     elif data == "check_joined":
         # Re-check right now (bypass the cache).
@@ -195,6 +207,49 @@ async def on_callback(update: Update,
             await _send_group_welcome(query, context, user)
         else:
             await _safe_edit(query, WELCOME, _menu_for(user.id, True))
+
+
+async def _show_section(query, context: ContextTypes.DEFAULT_TYPE,
+                      section: str, default_text: str) -> None:
+    """Show a menu section: the admin's custom text/photo if one is
+    set (via /set...), otherwise the default from content.py.
+    A photo is sent as a new message — a text message can't be
+    edited into a photo — and the menu message is deleted, exactly
+    like the photo welcome."""
+    custom = db.get_content_section(section)
+    markup = keyboards.back_menu()
+    label = content_editors.SECTION_LABEL[section]
+
+    if custom and custom.get("photo_file_id") and query.message is not None:
+        sent = await content_editors.try_send_section_photo(
+            context.bot, query.message.chat_id,
+            custom["photo_file_id"], custom.get("text") or "",
+            reply_markup=markup)
+        if sent:
+            try:
+                await query.message.delete()
+            except Exception as exc:
+                logger.warning("Could not delete menu message: %s", exc)
+            return
+        # Photo failed (stale file_id?) — fall back to the caption
+        # text and tell the admins to re-set the image.
+        logger.warning("Custom %s photo failed to send", section)
+        await notify_admins(
+            context,
+            f"⚠️ <b>{label} photo failed</b>\n\n"
+            f"The custom {label} photo could not be sent (its file may "
+            "be outdated), so the user saw the text version instead.\n\n"
+            f"Use /set{section} in a private chat with me to set it "
+            "again with a new photo.")
+        await _safe_edit(
+            query, custom.get("text") or default_text, markup)
+        return
+
+    if custom and custom.get("text"):
+        await _safe_edit(query, custom["text"], markup)
+        return
+
+    await _safe_edit(query, default_text, markup)
 
 
 async def _send_group_welcome(query, context: ContextTypes.DEFAULT_TYPE,
