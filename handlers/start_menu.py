@@ -205,13 +205,14 @@ async def _send_group_welcome(query, context: ContextTypes.DEFAULT_TYPE,
                               user) -> None:
     """Post-join welcome in the group: the admin's custom welcome
     (photo + caption or text, with {name} filled in) if one is set,
-    otherwise the default message. The welcome carries no buttons —
-    same as before, only the body changes."""
+    otherwise the default message. EVERY path carries the fixed
+    welcome buttons (Chat with Owner / Website / Our Reviews)."""
     if query.message is None:
         return
     name = user.first_name or ""
     custom = db.get_welcome()
     chat_id = query.message.chat_id
+    markup = keyboards.welcome_keyboard()
 
     # Photo welcome: send the photo as a new message, then remove
     # the gate warning (a text message can't be edited into a photo).
@@ -219,7 +220,8 @@ async def _send_group_welcome(query, context: ContextTypes.DEFAULT_TYPE,
         caption = welcome.render_welcome_text(
             custom.get("text") or "", name)
         sent = await welcome.try_send_welcome_photo(
-            context.bot, chat_id, custom["photo_file_id"], caption)
+            context.bot, chat_id, custom["photo_file_id"], caption,
+            reply_markup=markup)
         if sent:
             try:
                 await query.message.delete()
@@ -241,16 +243,19 @@ async def _send_group_welcome(query, context: ContextTypes.DEFAULT_TYPE,
         await _safe_edit(
             query,
             caption or GROUP_WELCOME_DEFAULT.format(
-                name=html.escape(name)))
+                name=html.escape(name)),
+            markup)
         return
 
     if custom and custom.get("text"):
         await _safe_edit(
-            query, welcome.render_welcome_text(custom["text"], name))
+            query, welcome.render_welcome_text(custom["text"], name),
+            markup)
         return
 
     await _safe_edit(
-        query, GROUP_WELCOME_DEFAULT.format(name=html.escape(name)))
+        query, GROUP_WELCOME_DEFAULT.format(name=html.escape(name)),
+        markup)
 
 
 async def _show_giveaway(query, context: ContextTypes.DEFAULT_TYPE,

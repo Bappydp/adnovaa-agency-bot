@@ -14,11 +14,14 @@ from config import ADMIN_IDS, BOT_USERNAME, CHANNEL_ID
 
 logger = logging.getLogger(__name__)
 
-# Membership cache: user_id -> (is_member, checked_at).
-# Avoids one Telegram API call per group message.
+# Membership cache: user_id -> (True, checked_at).
+# ONLY positive results are cached (members re-checked every
+# 10 minutes). "Not a member" is NEVER cached: a user who joins
+# the channel must be able to write in the group with their very
+# next message, without tapping anything or waiting for a cache
+# to expire.
 _member_cache: dict[int, tuple[bool, float]] = {}
 _MEMBER_TTL = 600        # members re-checked every 10 minutes
-_NONMEMBER_TTL = 120     # non-members re-checked every 2 minutes
 
 # Group-admin cache: (chat_id, user_id) -> (is_admin, checked_at).
 _group_admin_cache: dict[tuple[int, int], tuple[bool, float]] = {}
@@ -54,6 +57,23 @@ def invalidate_member_cache(user_id: int) -> None:
     _member_cache.pop(user_id, None)
 
 
+def mark_member_cache(user_id: int) -> None:
+    """Record a user as a channel member (used when the channel
+    join update arrives, so their very next group message passes
+    at once even before any live re-check)."""
+    _member_cache[user_id] = (True, time.time())
+
+
+def is_our_channel(chat) -> bool:
+    """Is this chat our gated channel? Matches by @username when
+    CHANNEL_ID is a username, or by numeric chat ID when it is one."""
+    if not CHANNEL_ID:
+        return False
+    if CHANNEL_ID.startswith("@"):
+        return getattr(chat, "username", None) == CHANNEL_ID[1:]
+    return str(getattr(chat, "id", "")) == CHANNEL_ID
+
+
 async def is_channel_member(bot, user_id: int) -> bool | None:
     """Check whether a user is a member of the channel.
 
@@ -61,6 +81,11 @@ async def is_channel_member(bot, user_id: int) -> bool | None:
     failed — e.g. bot is not a channel admin, or Telegram errored).
     Callers must treat None as "don't block" so a config problem
     never locks real users out.
+
+    Only "is a member" is cached (10 minutes). "Not a member" is
+    NEVER cached — every message from a non-member re-checks live,
+    so the first message after joining the channel goes through
+    immediately, with no tap and no wait.
     """
     if not CHANNEL_ID:
         return True  # channel not configured yet — don't block anyone
@@ -68,9 +93,9 @@ async def is_channel_member(bot, user_id: int) -> bool | None:
     cached = _member_cache.get(user_id)
     if cached is not None:
         result, checked_at = cached
-        ttl = _MEMBER_TTL if result else _NONMEMBER_TTL
-        if time.time() - checked_at < ttl:
+        if time.time() - checked_at < _MEMBER_TTL:
             return result
+        _member_cache.pop(user_id, None)
 
     try:
         member = await bot.get_chat_member(CHANNEL_ID, user_id)
@@ -82,7 +107,9 @@ async def is_channel_member(bot, user_id: int) -> bool | None:
                        user_id, exc)
         return None
 
-    _member_cache[user_id] = (result, time.time())
+    # Cache ONLY "is a member" — never "not a member" (see above).
+    if result:
+        _member_cache[user_id] = (True, time.time())
     return result
 
 

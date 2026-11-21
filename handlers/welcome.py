@@ -29,6 +29,7 @@ from telegram.ext import (
 )
 
 import database as db
+import keyboards
 from content import GROUP_WELCOME_DEFAULT
 from handlers.common import admin_only, is_admin
 
@@ -64,23 +65,27 @@ def _is_private(update: Update) -> bool:
     return chat is not None and chat.type == "private"
 
 
-async def _send_rendered(bot, chat_id: int, text: str) -> None:
+async def _send_rendered(bot, chat_id: int, text: str,
+                       reply_markup=None) -> None:
     """Send text as-is (admin HTML like <b> works); if Telegram
     rejects it as bad HTML, retry with the text escaped."""
     try:
-        await bot.send_message(chat_id, text)
+        await bot.send_message(chat_id, text, reply_markup=reply_markup)
     except BadRequest:
-        await bot.send_message(chat_id, html.escape(text))
+        await bot.send_message(chat_id, html.escape(text),
+                               reply_markup=reply_markup)
 
 
 async def try_send_welcome_photo(bot, chat_id: int, photo_file_id: str,
-                                 caption: str) -> bool:
+                                 caption: str,
+                                 reply_markup=None) -> bool:
     """Send the welcome photo. Retries once with an escaped caption
     if Telegram rejects the HTML. Returns False if the photo itself
     can't be sent (e.g. a stale file_id)."""
     for cap in (caption, html.escape(caption)):
         try:
-            await bot.send_photo(chat_id, photo_file_id, caption=cap)
+            await bot.send_photo(chat_id, photo_file_id, caption=cap,
+                                 reply_markup=reply_markup)
             return True
         except BadRequest:
             continue
@@ -92,18 +97,22 @@ async def try_send_welcome_photo(bot, chat_id: int, photo_file_id: str,
 
 async def send_welcome_preview(context: ContextTypes.DEFAULT_TYPE,
                                chat_id: int, sample_name: str) -> None:
-    """Send the current welcome exactly as a joiner sees it.
-    The group welcome carries no buttons, so none are attached."""
+    """Send the current welcome exactly as a joiner sees it —
+    including the fixed welcome buttons (Chat with Owner /
+    Website / Our Reviews)."""
+    markup = keyboards.welcome_keyboard()
     welcome = db.get_welcome()
     if welcome and welcome.get("photo_file_id"):
         caption = render_welcome_text(welcome.get("text") or "",
                                       sample_name)
         if await try_send_welcome_photo(context.bot, chat_id,
-                                        welcome["photo_file_id"], caption):
+                                        welcome["photo_file_id"], caption,
+                                        reply_markup=markup):
             return
         # The saved photo can't be sent (stale file_id?) — show the
         # text version and tell the admin to re-set the image.
-        await _send_rendered(context.bot, chat_id, caption)
+        await _send_rendered(context.bot, chat_id, caption,
+                             reply_markup=markup)
         await context.bot.send_message(
             chat_id,
             "⚠️ The saved photo could not be sent — it may be outdated. "
@@ -112,11 +121,13 @@ async def send_welcome_preview(context: ContextTypes.DEFAULT_TYPE,
     if welcome and welcome.get("text"):
         await _send_rendered(
             context.bot, chat_id,
-            render_welcome_text(welcome["text"], sample_name))
+            render_welcome_text(welcome["text"], sample_name),
+            reply_markup=markup)
         return
     await context.bot.send_message(
         chat_id,
-        GROUP_WELCOME_DEFAULT.format(name=html.escape(sample_name)))
+        GROUP_WELCOME_DEFAULT.format(name=html.escape(sample_name)),
+        reply_markup=markup)
 
 
 # ------------------------------------------------------------------

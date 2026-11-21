@@ -13,6 +13,12 @@ What it does:
   • Bot-status alert: if the bot itself is removed/kicked from a
     chat, or loses its admin rights there, the admins are told
     immediately.
+  • Channel-gate cache refresh: the moment someone joins OUR
+    channel, they are marked as a member in the membership cache
+    (so their very next group message passes at once); when they
+    leave the channel, the cached entry is dropped so the gate
+    re-checks them live. Only updates about our gated channel
+    touch the cache — group joins/leaves never do.
 """
 
 import html
@@ -32,7 +38,12 @@ from content import (
     ALERT_BOT_REMOVED,
     ALERT_MASS_LEAVE,
 )
-from handlers.common import notify_admins
+from handlers.common import (
+    invalidate_member_cache,
+    is_our_channel,
+    mark_member_cache,
+    notify_admins,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -78,11 +89,19 @@ async def track_membership(update: Update,
     if old in _GONE_STATUSES and new in _MEMBER_STATUSES:
         db.record_join(chat.id, user.id)
         logger.info("User %s joined %s", user.id, chat.id)
+        if is_our_channel(chat):
+            # They just joined the channel — their very next group
+            # message must go through at once, no tap needed.
+            mark_member_cache(user.id)
         return
 
     if old in _MEMBER_STATUSES and new in _GONE_STATUSES:
         db.record_leave(chat.id, user.id)
         logger.info("User %s left %s", user.id, chat.id)
+        if is_our_channel(chat):
+            # They left the channel — drop any cached "member"
+            # result so the gate re-checks them live next time.
+            invalidate_member_cache(user.id)
         due, leaves = db.mass_leave_alert_due(
             chat.id, MASS_LEAVE_THRESHOLD, MASS_LEAVE_WINDOW_HOURS,
             MASS_LEAVE_ALERT_COOLDOWN_HOURS)
