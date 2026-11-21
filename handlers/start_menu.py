@@ -13,6 +13,7 @@ from content import (
     CONTACT,
     FAQ,
     GIVEAWAY_NONE_ACTIVE,
+    GROUP_WELCOME_DEFAULT,
     HELP_TEXT,
     PAYMENT_INFO,
     PORTFOLIO,
@@ -22,12 +23,14 @@ from content import (
     render_packages,
     render_services,
 )
+from handlers import welcome
 from handlers.common import (
     channel_url,
     get_bot_username,
     invalidate_member_cache,
     is_channel_member,
     mark_lead_and_notify,
+    notify_admins,
     referral_link,
 )
 
@@ -193,12 +196,61 @@ async def on_callback(update: Update,
         # Joined (or the check failed — fail open, welcome them).
         chat_type = query.message.chat.type if query.message else "private"
         if chat_type in ("group", "supergroup"):
-            await _safe_edit(
-                query,
-                f"✅ {html.escape(user.first_name or '')}, you're in — "
-                "welcome! You can write in the group now.")
+            await _send_group_welcome(query, context, user)
         else:
             await _safe_edit(query, WELCOME, _menu_for(user.id, True))
+
+
+async def _send_group_welcome(query, context: ContextTypes.DEFAULT_TYPE,
+                              user) -> None:
+    """Post-join welcome in the group: the admin's custom welcome
+    (photo + caption or text, with {name} filled in) if one is set,
+    otherwise the default message. The welcome carries no buttons —
+    same as before, only the body changes."""
+    if query.message is None:
+        return
+    name = user.first_name or ""
+    custom = db.get_welcome()
+    chat_id = query.message.chat_id
+
+    # Photo welcome: send the photo as a new message, then remove
+    # the gate warning (a text message can't be edited into a photo).
+    if custom and custom.get("photo_file_id"):
+        caption = welcome.render_welcome_text(
+            custom.get("text") or "", name)
+        sent = await welcome.try_send_welcome_photo(
+            context.bot, chat_id, custom["photo_file_id"], caption)
+        if sent:
+            try:
+                await query.message.delete()
+            except Exception as exc:
+                logger.warning("Could not delete gate warning: %s", exc)
+            return
+        # Photo failed (stale file_id?) — fall back to the text
+        # version and tell the admins to re-set the image.
+        logger.warning("Custom welcome photo failed to send in %s",
+                       chat_id)
+        await notify_admins(
+            context,
+            "⚠️ <b>Welcome photo failed</b>\n\n"
+            "The custom welcome photo could not be sent in the group "
+            "(its file may be outdated), so new members saw the text "
+            "version instead.\n\n"
+            "Use /setwelcome in a private chat with me to set the "
+            "welcome again with a new photo.")
+        await _safe_edit(
+            query,
+            caption or GROUP_WELCOME_DEFAULT.format(
+                name=html.escape(name)))
+        return
+
+    if custom and custom.get("text"):
+        await _safe_edit(
+            query, welcome.render_welcome_text(custom["text"], name))
+        return
+
+    await _safe_edit(
+        query, GROUP_WELCOME_DEFAULT.format(name=html.escape(name)))
 
 
 async def _show_giveaway(query, context: ContextTypes.DEFAULT_TYPE,

@@ -55,7 +55,11 @@ async def adminhelp_command(update: Update,
         "• <code>/delspamword word</code> — remove a spam word\n"
         "• <code>/spamwords</code> — list spam words\n\n"
         "<b>Alerts</b>\n"
-        "• <code>/alerts</code> — recent leaves and alert status"
+        "• <code>/alerts</code> — recent leaves and alert status\n\n"
+        "<b>Welcome message</b>\n"
+        "• <code>/setwelcome</code> — set the group welcome (text or photo + caption)\n"
+        "• <code>/welcome</code> — preview the current welcome\n"
+        "• <code>/resetwelcome</code> — back to the default welcome"
     )
 
 
