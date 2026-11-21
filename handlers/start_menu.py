@@ -16,7 +16,6 @@ from content import (
     GROUP_WELCOME_DEFAULT,
     HELP_TEXT,
     PAYMENT_INFO,
-    PORTFOLIO,
     VIP_OFFERS,
     WELCOME,
     WELCOME_NOT_SUBSCRIBED,
@@ -134,9 +133,6 @@ async def on_callback(update: Update,
         await mark_lead_and_notify(context, user)
         await _safe_edit(query, render_packages(),
                          keyboards.back_menu())
-
-    elif data == "menu_portfolio":
-        await _safe_edit(query, PORTFOLIO, keyboards.back_menu())
 
     elif data == "menu_contact":
         await mark_lead_and_notify(context, user)
