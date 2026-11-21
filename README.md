@@ -8,7 +8,7 @@ Ei bot-ta tomar agency-r Telegram promotion, lead capture ar group management �
 2. **Service details + package/price** — 3-ta package: Starter / Growth / Premium (price ekhono example — `content.py`-te TODO lekha ache, asol price bosate hobe)
 3. **FAQ auto-reply** — `/faq` + DM-e proshno likhle keyword miliye uttor dei
 4. **Broadcast** — `/broadcast <message>` dile bot start kora sob user-ke message jai
-5. **Force-subscribe** — group-e likhte hole age channel join korte hobe; join na korle message delete hoye jai + Join button ashe. Channel join korar porer message-tai sathe sathe jabe — **✅ I've Joined tap korte hoi na** (tap korle sudhu welcome message-ta ashe)
+5. **Force-subscribe** — group-e likhte hole age channel join korte hobe; join na korle message delete hoye jai + Join button ashe. Warning-ta group-e 30 second por nije nije delete hoye jai, ar prottek user 5 minute-e 1-bar-i warning pai. Channel join korar porer message-tai sathe sathe jabe — **✅ I've Joined tap korte hoi na** (tap korle sudhu welcome message-ta ashe)
 6. **Admin stats** — `/stats`: total user, ajker/ei week-er notun user, kon button-e koto click, top command, lead, VIP count
 7. **Payment info** — payment method dekhai (wallet address ekhono placeholder — `PASTE_YOUR_WALLET_HERE`, asol address bosate hobe)
 8. **Coupon system** — `/addcoupon CODE PERCENT EXPIRY`, user `/redeem CODE` diye use kore (jon proti 1 bar, expiry check hoi)
