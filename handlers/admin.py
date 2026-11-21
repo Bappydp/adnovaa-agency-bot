@@ -66,11 +66,7 @@ async def adminhelp_command(update: Update,
         "• <code>/setcontact</code> — set the Contact details\n"
         "• <code>/setpayment</code> — set the Payment Info details\n"
         "• <code>/resetservices</code> / <code>/resetpricing</code> / "
-        "<code>/resetcontact</code> / <code>/resetpayment</code> — back to defaults\n\n"
-        "<b>Auto-share</b>\n"
-        "• <code>/addsharegroup &lt;link or @username or ID&gt;</code> — forward every new channel post to a group (add the bot to the group first)\n"
-        "• <code>/delsharegroup &lt;link or @username or ID&gt;</code> — stop sharing to a group\n"
-        "• <code>/sharegroups</code> — list the saved groups (max 20)"
+        "<code>/resetcontact</code> / <code>/resetpayment</code> — back to defaults"
     )
 
 
