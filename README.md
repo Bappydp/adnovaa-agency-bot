@@ -2,15 +2,15 @@
 
 Ei bot-ta tomar agency-r Telegram promotion, lead capture ar group management — sob ek jaigay.
 
-## Bot-ta ki ki kore (16-ta feature)
+## Bot-ta ki ki kore (17-ta feature)
 
 1. **Welcome + button menu** — `/start` dile Services, Pricing, Contact button ashe
-2. **Service details + package/price** — 3-ta package: Starter / Growth / Premium (price ekhono example — `content.py`-te TODO lekha ache, asol price bosate hobe)
+2. **Service details + package/price** — 3-ta package: Starter / Growth / Premium (price ekhono example — `content.py`-te TODO lekha ache, asol price bosate hobe — `/setpricing` diye tumi nije bosate paro)
 3. **FAQ auto-reply** — `/faq` + DM-e proshno likhle keyword miliye uttor dei
 4. **Broadcast** — `/broadcast <message>` dile bot start kora sob user-ke message jai
 5. **Force-subscribe** — group-e likhte hole age channel join korte hobe; join na korle message delete hoye jai + Join button ashe. Warning-ta group-e 30 second por nije nije delete hoye jai, ar prottek user 5 minute-e 1-bar-i warning pai. Channel join korar porer message-tai sathe sathe jabe — **✅ I've Joined tap korte hoi na** (tap korle sudhu welcome message-ta ashe)
 6. **Admin stats** — `/stats`: total user, ajker/ei week-er notun user, kon button-e koto click, top command, lead, VIP count
-7. **Payment info** — payment method dekhai (wallet address ekhono placeholder — `PASTE_YOUR_WALLET_HERE`, asol address bosate hobe)
+7. **Payment info** — payment method dekhai (wallet address ekhono placeholder — `PASTE_YOUR_WALLET_HERE`, asol address bosate hobe — `/setpayment` diye tumi nije bosate paro)
 8. **Coupon system** — `/addcoupon CODE PERCENT EXPIRY`, user `/redeem CODE` diye use kore (jon proti 1 bar, expiry check hoi)
 9. **Giveaway / contest** — `/giveaway Title | din` diye toiri, referral link-e +1 entry, `/draw` diye winner tola
 10. **Keyword auto-reply (group)** — group-e keu "price", "service", "audit" likhle bot uttor dei; `/addkeyword` / `/delkeyword` diye notun word add/remove kora jai
@@ -20,6 +20,7 @@ Ei bot-ta tomar agency-r Telegram promotion, lead capture ar group management �
 14. **/report** — member group-e kono message-e reply diye `/report` dile admin-der kache jai, sathe Delete / Ban / Dismiss button
 15. **Admin alert** — 1 ghontai 5+ jon leave korle alert; bot-ke group/channel theke sorale ba admin power kere nile sathe sathe alert. `/alerts` diye obostha dekha jai
 16. **Welcome editor** — `/setwelcome` diye group-er welcome message tumi nije set korte paro (text ba chobi + caption); `/welcome` diye preview, `/resetwelcome` diye default-e fera jai
+17. **Menu content editor** — `/setservices`, `/setpricing`, `/setcontact`, `/setpayment` diye menu button-er pichoner lekha tumi nije bodlate paro (text ba chobi + caption, sorbochcho 3000 okkhor); `/resetservices` / `/resetpricing` / `/resetcontact` / `/resetpayment` diye default-e fera jai. Pricing-er custom lekha bosale package-er list-ta puropuri bodle jai
 
 > ⚠️ **Ekta sotti kotha:** kono bot-i kauke channel report kora thekate pare na — report kora Telegram-er nijer system, ar report-er por ki hobe seta sudhu Telegram decide kore. Ei protection feature-gulo spam komiye report howar karon komai, kintu channel-ke "report-proof" banate pare na. Channel clean rakhlei sobcheye boro protection.
 

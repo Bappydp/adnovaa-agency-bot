@@ -1,6 +1,6 @@
 """Agency Telegram Bot — Facebook | Google Ads Agencies.
 
-Features (all 16):
+Features (all 17):
   1. /start welcome + button menu (Services, Pricing, Contact)
   2. Service details + 3 packages (prices are TODO placeholders in content.py)
   3. FAQ auto-reply (/faq + keyword matching in DMs)
@@ -21,6 +21,10 @@ Features (all 16):
  16. Welcome editor: the admin sets the post-join group welcome
      himself, text or photo + caption (/setwelcome, /welcome,
      /resetwelcome)
+ 17. Menu content editors: the admin sets the details behind the
+     Services / Pricing / Contact / Payment Info buttons himself,
+     text or photo + caption (/setservices, /setpricing,
+     /setcontact, /setpayment + /reset... for each)
 
 Runs with long polling + a tiny Flask health endpoint on $PORT,
 so it fits Render's free web-service tier (kept awake by a
@@ -49,7 +53,7 @@ from telegram.ext import (
 import config
 import database as db
 from content import GROUP_KEYWORD_DEFAULTS, SPAM_WORD_DEFAULTS
-from handlers import admin, dm, giveaway, group, jobs, report, start_menu, watch, welcome
+from handlers import admin, content_editors, dm, giveaway, group, jobs, report, start_menu, watch, welcome
 
 logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
@@ -115,6 +119,11 @@ def build_application() -> Application:
     # normal commands and DM text are unaffected.
     app.add_handler(welcome.setwelcome_conversation())
 
+    # Same ordering for the /set... content editors (Services /
+    # Pricing / Contact / Payment Info): one ConversationHandler
+    # with four entry points, also before /cancel and DM text.
+    app.add_handler(content_editors.setcontent_conversation())
+
     # User commands.
     app.add_handler(CommandHandler("start", start_menu.start))
     app.add_handler(CommandHandler("help", start_menu.help_command))
@@ -148,6 +157,14 @@ def build_application() -> Application:
     app.add_handler(CommandHandler("welcome", welcome.welcome_command))
     app.add_handler(CommandHandler("resetwelcome",
                                    welcome.resetwelcome_command))
+    app.add_handler(CommandHandler(
+        "resetservices", content_editors.resetservices_command))
+    app.add_handler(CommandHandler(
+        "resetpricing", content_editors.resetpricing_command))
+    app.add_handler(CommandHandler(
+        "resetcontact", content_editors.resetcontact_command))
+    app.add_handler(CommandHandler(
+        "resetpayment", content_editors.resetpayment_command))
     app.add_handler(CommandHandler("giveaway",
                                    giveaway.create_giveaway_command))
     app.add_handler(CommandHandler("draw", giveaway.draw_command))
