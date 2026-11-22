@@ -66,7 +66,15 @@ async def adminhelp_command(update: Update,
         "• <code>/setcontact</code> — set the Contact details\n"
         "• <code>/setpayment</code> — set the Payment Info details\n"
         "• <code>/resetservices</code> / <code>/resetpricing</code> / "
-        "<code>/resetcontact</code> / <code>/resetpayment</code> — back to defaults"
+        "<code>/resetcontact</code> / <code>/resetpayment</code> — back to defaults\n\n"
+        "<b>Scheduled auto-post</b>\n"
+        "• <code>/setpost</code> — set the post (groups: every 2h, channels: every 6h; text or photo + caption)\n"
+        "• <code>/post</code> — preview the current scheduled post\n"
+        "• <code>/resetpost</code> — clear the scheduled post\n"
+        "• <code>/autopost</code> — status; <code>/autopost on</code> / <code>/autopost off</code> to resume/pause\n"
+        "• <code>/addposttarget &lt;link or @username or ID&gt;</code> — add a channel/group (make the bot an admin there first)\n"
+        "• <code>/delposttarget &lt;link or @username or ID&gt;</code> — remove a target\n"
+        "• <code>/posttargets</code> — list the auto-post targets"
     )
 
 
