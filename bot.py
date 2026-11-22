@@ -1,6 +1,6 @@
 """Agency Telegram Bot — Facebook | Google Ads Agencies.
 
-Features (all 17):
+Features (all 18):
   1. /start welcome + button menu (Services, Pricing, Contact)
   2. Service details + 3 packages (prices are TODO placeholders in content.py)
   3. FAQ auto-reply (/faq + keyword matching in DMs)
@@ -25,6 +25,12 @@ Features (all 17):
      Services / Pricing / Contact / Payment Info buttons himself,
      text or photo + caption (/setservices, /setpricing,
      /setcontact, /setpayment + /reset... for each)
+ 18. Scheduled auto-post: the admin sets one post himself (/setpost,
+     text or photo + caption) and the bot sends it to every
+     channel/group where it is an admin — groups every 2 hours
+     (12/day), channels every 6 hours (4/day). Targets saved with
+     /addposttarget, or auto-added when the bot is promoted to
+     admin (/posttargets, /autopost on/off, /resetpost)
 
 Runs with long polling + a tiny Flask health endpoint on $PORT,
 so it fits Render's free web-service tier (kept awake by a
@@ -62,7 +68,7 @@ from telegram.ext import (
 import config
 import database as db
 from content import GROUP_KEYWORD_DEFAULTS, SPAM_WORD_DEFAULTS
-from handlers import admin, content_editors, dm, giveaway, group, jobs, report, start_menu, watch, welcome
+from handlers import admin, autopost, content_editors, dm, giveaway, group, jobs, report, start_menu, watch, welcome
 
 logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
@@ -102,8 +108,8 @@ def _run_flask() -> None:
 # Telegram rules: names lowercase, 1-32 chars; descriptions
 # 1-256 chars. Keep these lists in sync with the handlers
 # registered in build_application() (incl. the /set...
-# conversation entry points in handlers/welcome.py and
-# handlers/content_editors.py).
+# conversation entry points in handlers/welcome.py,
+# handlers/content_editors.py and handlers/autopost.py).
 
 USER_COMMANDS = [
     BotCommand("start", "Show the main menu"),
@@ -147,6 +153,13 @@ ADMIN_COMMANDS = [
     BotCommand("resetpricing", "Reset Pricing to the default"),
     BotCommand("resetcontact", "Reset Contact to the default"),
     BotCommand("resetpayment", "Reset Payment Info to the default"),
+    BotCommand("setpost", "Set the scheduled auto-post"),
+    BotCommand("post", "Preview the scheduled auto-post"),
+    BotCommand("resetpost", "Clear the scheduled auto-post"),
+    BotCommand("autopost", "Auto-post status / on / off"),
+    BotCommand("addposttarget", "Add an auto-post channel/group"),
+    BotCommand("delposttarget", "Remove an auto-post target"),
+    BotCommand("posttargets", "List auto-post targets"),
 ]
 
 
@@ -213,6 +226,10 @@ def build_application() -> Application:
     # with four entry points, also before /cancel and DM text.
     app.add_handler(content_editors.setcontent_conversation())
 
+    # Same ordering for the /setpost auto-post editor: one
+    # ConversationHandler, also before /cancel and DM text.
+    app.add_handler(autopost.setpost_conversation())
+
     # User commands.
     app.add_handler(CommandHandler("start", start_menu.start))
     app.add_handler(CommandHandler("help", start_menu.help_command))
@@ -254,6 +271,17 @@ def build_application() -> Application:
         "resetcontact", content_editors.resetcontact_command))
     app.add_handler(CommandHandler(
         "resetpayment", content_editors.resetpayment_command))
+    app.add_handler(CommandHandler("post", autopost.post_command))
+    app.add_handler(CommandHandler("resetpost",
+                                   autopost.resetpost_command))
+    app.add_handler(CommandHandler("autopost",
+                                   autopost.autopost_command))
+    app.add_handler(CommandHandler("addposttarget",
+                                   autopost.addposttarget_command))
+    app.add_handler(CommandHandler("delposttarget",
+                                   autopost.delposttarget_command))
+    app.add_handler(CommandHandler("posttargets",
+                                   autopost.posttargets_command))
     app.add_handler(CommandHandler("giveaway",
                                    giveaway.create_giveaway_command))
     app.add_handler(CommandHandler("draw", giveaway.draw_command))
@@ -282,10 +310,24 @@ def build_application() -> Application:
             jobs.daily_followup,
             time=dtime(hour=10, minute=0, tzinfo=timezone.utc),
             name="lead_followup")
+        # Scheduled auto-post, one job per chat type — groups
+        # every 2 hours (12/day), channels every 6 hours (4/day);
+        # each job's first run is one interval after startup.
+        app.job_queue.run_repeating(
+            autopost.group_post,
+            interval=autopost.GROUP_POST_INTERVAL,
+            first=autopost.GROUP_POST_INTERVAL,
+            name="group_autopost")
+        app.job_queue.run_repeating(
+            autopost.channel_post,
+            interval=autopost.CHANNEL_POST_INTERVAL,
+            first=autopost.CHANNEL_POST_INTERVAL,
+            name="channel_autopost")
     else:
         logger.warning(
             "JobQueue is not available — install "
-            "python-telegram-bot[job-queue] to enable lead follow-ups.")
+            "python-telegram-bot[job-queue] to enable lead follow-ups "
+            "and the auto-post.")
 
     return app
 
