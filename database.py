@@ -151,6 +151,23 @@ CREATE TABLE IF NOT EXISTS content_settings (
     photo_file_id TEXT,
     updated_at    TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS autopost_settings (
+    id            INTEGER PRIMARY KEY,
+    text          TEXT,
+    photo_file_id TEXT,
+    enabled       INTEGER NOT NULL DEFAULT 1,
+    updated_at    TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS post_targets (
+    chat_id    INTEGER PRIMARY KEY,
+    title      TEXT,
+    username   TEXT,
+    type       TEXT,
+    added_by   INTEGER,
+    added_at   TEXT NOT NULL
+);
 """
 
 
@@ -900,3 +917,100 @@ def reset_content_section(section: str) -> bool:
             (section,))
         conn.commit()
         return cur.rowcount > 0
+
+
+# ------------------------------------------------------------------
+# Scheduled auto-post (post set by the admin with /setpost; targets
+# saved with /addposttarget or auto-added when the bot is promoted
+# to admin in a channel/group)
+# ------------------------------------------------------------------
+# Same single-row mechanism as the custom welcome (id=1), plus an
+# enabled flag so the admin can pause/resume with /autopost off/on.
+
+def get_autopost() -> dict | None:
+    """The scheduled post (single row, id=1), or None."""
+    with _lock:
+        row = _connect().execute(
+            "SELECT * FROM autopost_settings WHERE id = 1").fetchone()
+    return dict(row) if row else None
+
+
+def set_autopost(text: str | None, photo_file_id: str | None) -> None:
+    """Save (or replace) the scheduled post — and enable
+    posting: setting a post turns it on."""
+    with _lock:
+        conn = _connect()
+        conn.execute(
+            "INSERT OR REPLACE INTO autopost_settings "
+            "(id, text, photo_file_id, enabled, updated_at) "
+            "VALUES (1, ?, ?, 1, ?)",
+            (text, photo_file_id, _now_iso()))
+        conn.commit()
+
+
+def reset_autopost() -> bool:
+    """Delete the scheduled post (posting stops).
+    Returns True if one existed."""
+    with _lock:
+        conn = _connect()
+        cur = conn.execute("DELETE FROM autopost_settings WHERE id = 1")
+        conn.commit()
+        return cur.rowcount > 0
+
+
+def set_autopost_enabled(enabled: bool) -> bool:
+    """Pause (False) or resume (True) auto-posting.
+    Returns False if no post is set (there is nothing to pause)."""
+    with _lock:
+        conn = _connect()
+        cur = conn.execute(
+            "UPDATE autopost_settings SET enabled = ? WHERE id = 1",
+            (1 if enabled else 0,))
+        conn.commit()
+        return cur.rowcount > 0
+
+
+def get_post_target(chat_id: int) -> dict | None:
+    with _lock:
+        row = _connect().execute(
+            "SELECT * FROM post_targets WHERE chat_id = ?",
+            (chat_id,)).fetchone()
+    return dict(row) if row else None
+
+
+def add_post_target(chat_id: int, title: str | None,
+                    username: str | None, chat_type: str,
+                    added_by: int | None) -> None:
+    """Save (or refresh) an auto-post target chat."""
+    with _lock:
+        conn = _connect()
+        conn.execute(
+            "INSERT OR REPLACE INTO post_targets "
+            "(chat_id, title, username, type, added_by, added_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (chat_id, title, username, chat_type, added_by, _now_iso()))
+        conn.commit()
+
+
+def delete_post_target(chat_id: int) -> bool:
+    """Remove an auto-post target. Returns True if one existed."""
+    with _lock:
+        conn = _connect()
+        cur = conn.execute("DELETE FROM post_targets WHERE chat_id = ?",
+                           (chat_id,))
+        conn.commit()
+        return cur.rowcount > 0
+
+
+def list_post_targets() -> list[dict]:
+    with _lock:
+        rows = _connect().execute(
+            "SELECT * FROM post_targets ORDER BY added_at").fetchall()
+    return [dict(r) for r in rows]
+
+
+def count_post_targets() -> int:
+    with _lock:
+        count = _connect().execute(
+            "SELECT COUNT(*) FROM post_targets").fetchone()[0]
+    return count

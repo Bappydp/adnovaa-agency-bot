@@ -450,3 +450,21 @@ ALERT_BOT_DEMOTED = (
     "It can no longer delete messages or ban spammers there — "
     "please make it an admin again."
 )
+
+ALERT_AUTOPOST_FAILED = (
+    "⚠️ <b>Auto-post failed in some places</b>\n\n"
+    "{failures}{removed_note}"
+)
+
+AUTOPOST_TARGET_ADDED = (
+    "📢 <b>Auto-post target added</b>\n\n"
+    "I was made an admin in {chat}, so the scheduled post will now "
+    "go there too. ({count}/{max} targets)"
+)
+
+AUTOPOST_TARGET_FULL = (
+    "📢 <b>Auto-post target NOT added</b>\n\n"
+    "I was made an admin in {chat}, but the auto-post list is "
+    "full ({max} targets). Remove one with /delposttarget first, "
+    "then add this chat with /addposttarget."
+)

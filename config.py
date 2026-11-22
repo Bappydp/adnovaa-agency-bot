@@ -15,11 +15,12 @@ BOT_TOKEN: str = os.getenv("BOT_TOKEN", "")
 
 # Comma-separated Telegram user IDs of the bot admins, e.g. "123456789,987654321".
 # Get your own ID from @userinfobot on Telegram.
-# Default: the owner's ID (6824922316), pre-filled so the admin
-# commands work even if ADMIN_IDS is never set on Render.
+# Default: the owner's ID (6824922316) + the second admin's ID
+# (9027179219), pre-filled so the admin commands work even if
+# ADMIN_IDS is never set on Render.
 # Override via the ADMIN_IDS env var to add or change admins.
 ADMIN_IDS: list[int] = [
-    int(x) for x in os.getenv("ADMIN_IDS", "6824922316").split(",")
+    int(x) for x in os.getenv("ADMIN_IDS", "6824922316,9027179219").split(",")
     if x.strip().isdigit()
 ]
 
